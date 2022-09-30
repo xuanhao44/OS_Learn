@@ -220,11 +220,11 @@ int main()
 
 ### 二 实验详细设计
 
-- [pingpong](http://www.sheniao.top/index.php/tech/57.html)
-- [primes](http://www.sheniao.top/index.php/tech/61.html)
-- [find (1)](http://www.sheniao.top/index.php/tech/65.html)
-- [find (2)](http://www.sheniao.top/index.php/tech/68.html)
-- [xargs](http://www.sheniao.top/index.php/tech/69.html)
+- [pingpong](http://www.sheniao.top/index.php/os/57.html)
+- [primes](http://www.sheniao.top/index.php/os/61.html)
+- [find (1)](http://www.sheniao.top/index.php/os/65.html)
+- [find (2)](http://www.sheniao.top/index.php/os/68.html)
+- [xargs](http://www.sheniao.top/index.php/os/69.html)
 
 ### 三 实验结果截图
 

@@ -30,9 +30,11 @@
 
 有事没事看一看，熟悉一下。
 
-其他人的课程学习笔记：[MIT 6.S081 Lecture Notes | Xiao Fan (樊潇) (fanxiao.tech)](https://fanxiao.tech/posts/MIT-6S081-notes/)
+其他人的课程学习笔记：
 
-可以参考，有些东西实在搞不懂的时候就看看。
+[MIT 6.S081 Lecture Notes | Xiao Fan (樊潇) (fanxiao.tech)](https://fanxiao.tech/posts/MIT-6S081-notes/)
+
+里面有课程和实验的精炼的笔记，可以在看完课程之后看他的课程的笔记，也可以在实验卡壳的时候去看看他怎么写的。
 
 **不建议看的**：
 
@@ -40,11 +42,7 @@
 
 老掉牙的 xv6 文档，似乎是古早版本的 MIT 讲义翻译，已经与现在的课程严重脱节，不建议参考。
 
-建议的学习流程：
+**建议的学习流程：**
 
-先看讲义，再看课程教案，再写实验。
-
-举例：如果要写 Lab2，前提条件是：`read Chapter 2 of the [xv6 book], and Sections 4.3 and 4.4 of Chapter 4`，就是说在实验前还要看这些教案。
-
-
+先看讲义，再看课程教案，再写实验；该流程中要是实在不懂就去找外援；最后总结写 blog。
 
