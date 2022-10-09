@@ -191,7 +191,7 @@ struct
 #define PGSIZE 4096 // bytes per page
 ```
 
-#### 4 阅读 `kernel/vm.c`，试解释 `copyout()` 函数各个参数的含义。
+#### 5 阅读 `kernel/vm.c`，试解释 `copyout()` 函数各个参数的含义。
 
 `kernel/vm.c/copyout`
 
@@ -369,6 +369,25 @@ int fork(void)
 10. **`kernel/kalloc.c` 中添加 `freemem()`**
 11. **`kernel/proc.c` 中添加 `nproc()`、`freefd()`**
 12. `kernel/def.h` 中补充 `freemem()`、`nproc()`、`freefd()` 函数定义
+
+最后改动的文件：
+
+```ascii
+xv6-labs-2020
+├── Makefile
+├── kernel
+│   ├── kalloc.c
+│   ├── proc.c
+│   ├── proc.h
+│   ├── sysproc.c
+│   ├── syscall.c
+│   ├── syscall.h
+│   └── def.h
+├── user
+│   ├── user.h
+|   └── usys.pl
+└── time.txt
+```
 
 #### 4 `freemem()`
 
