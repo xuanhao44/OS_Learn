@@ -555,14 +555,44 @@ bye                     # 换行后输入参数'bye'
 hello too               # 换行后继续输入参数'hello too'，至此接收两个参数
 good bye hello too      # 执行"echo good bye hello too"，输出"good bye hello too"
 # 通过ctrl+D结束输入
-$
 ```
 
 和上面一样的错法和修改方案。
 
 *直接使用 xargs 的情况不算多。*
 
-值得注意的一点是：在 linux 中，当键盘输入的参数满足 -n（如 -n1）的时候，就会输出一句，比如 eg10 中途输出的 good bye。这一点没有在要求中实现，事实上，我们在写的时候可以去考虑这个问题，也可以不考虑——也就是直接等输入完全结束后输出。
+
+
+另外：
+
+在 linux 中，输入换行表示一行输入结束，这时会输出一部分，例如：
+
+eg12（in linux，-n1 参数）
+
+```shell
+$ xargs -n1 echo good
+bye sora              # 换行后输入参数'bye' 'sora'
+good bye              # 输出 "good bye"
+good sora             # 输出 "good sora"
+bye sora friend       # 换行后输入参数'bye' 'sora' 'friend'
+good bye              # 输出 "good bye"
+good sora             # 输出 "good sora"
+good friend           # 输出 "good friend"
+# 通过ctrl+D结束输入
+```
+
+我下面的实现中并没有做到这一点，而是最后一起输出。也许可以考虑实现，但是实验并未要求。
+
+eg13（in linux，-n2 参数）
+
+```shell
+$ xargs -n2 echo good
+bye sora friend       # 换行后输入参数'bye' 'sora' 'friend'
+good bye sora         # 输出 "good bye sora"
+good friend           # 通过ctrl+D结束输入, 输出 "good sora"
+```
+
+输入参数不足 n，且输入结束，那就直接带着不够的参数执行。
 
 ## 5.4 代码实现
 
