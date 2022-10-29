@@ -24,7 +24,7 @@ xv6 book、课程翻译、xv6 源码、学校的指导书、网上的 GDB 调试
 
 ## 结束：报告
 
-### 一、回答问题
+### 一 回答问题
 
 #### 1 阅读 `kernel/syscall.c`，试解释函数 `syscall()` 如何根据系统调用号调用对应的系统调用处理函数（例如 `sys_fork`）？`syscall()` 将具体系统调用的返回值存放在哪里？
 
@@ -239,7 +239,7 @@ stati(f->ip, addr);
 
 别把 user 的 st 的 addr 和 kernel 的 st 的 &st 搞混了。
 
-### 二、实验详细设计
+### 二 实验详细设计
 
 感觉我能说的都被指导书说了。
 
@@ -528,6 +528,6 @@ sys_kill(void)
 
 大多数只是参数检查（不相信用户输入），实际的调用会进入 `file.c` 和 `fs.c`。
 
-### 三、实验结果截图
+### 三 实验结果截图
 
 <img src="https://typora-1304621073.cos.ap-guangzhou.myqcloud.com/typora/hit-xv6-lab-2020-syscall.png" alt="结果截图" style="zoom:67%;" />
