@@ -272,6 +272,8 @@ bget(uint dev, uint blockno)
     }
     release(&buk->lock);
   }
+  
+  release(&buk_key->lock);
 
   panic("bget: no buffers");
 }
@@ -512,6 +514,8 @@ bget(uint dev, uint blockno)
     }
     release(&buk->lock);
   }
+  
+  release(&buk_key->lock);
 
   panic("bget: no buffers");
 }
