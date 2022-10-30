@@ -148,6 +148,7 @@ struct {
 磁盘缓存：
 
 1. [Buffer cache (1) 分析原始设计](http://www.sheniao.top/index.php/os/120.html)
-2. 
+2. [Buffer cache (2) timestamp 单项优化](http://www.sheniao.top/index.php/os/122.html)
+3. [Buffer cache (3) 哈希单项优化](http://www.sheniao.top/index.php/os/125.html)
 
 ### 三 实验结果截图
