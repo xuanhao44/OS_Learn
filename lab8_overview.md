@@ -95,7 +95,7 @@ struct {
 
 这是预设好大小的，有一个头结点的双向循环链表。
 
-优点：与单向链表相比，双向 + 循环为查找提供了良好的性能。
+优点 1：与单向链表相比，双向 + 循环为查找提供了良好的性能。
 
 例子：比如要找指定节点的上一个节点，或者是从链表的最后一个节点开始之类的情况，单链表的性能很差。
 
@@ -131,9 +131,42 @@ struct {
 
 单向链表首先不能倒着找所以 FAIL，双向链表找到最后一个节点还需要把链表遍历完所以也不是很行，所以使用双向循环链表就很合适。
 
+优点 2：为删除链表节点提供了很便利的方法。
+
+双向链表的节点的删除，只需要把自己从链表中摘出即可；
+
+```c
+void remove(struct buf *b)
+{
+  b->next->prev = b->prev;
+  b->prev->next = b->next;
+}
+```
+
+而单向链表还需要遍历到该节点，再进行处理，这是很麻烦的。
+
+```c
+// b_target must exist in the list
+void remove(struct buf *head, struct buf *b_target)
+{
+  struct buf *b;
+
+  // init: the prev is head (laugh)
+  struct buf *prev = head;
+  // deal with the head carefully
+  for (b = head->next; b != (void *)0; b = b->next)
+  {
+    if (b == b_target)
+      prev->next = b->next;
+    // record prev
+    prev = b;
+  }
+}
+```
+
 **c. 为什么哈希表可以提升磁盘缓存的性能？可以使用内存分配器的优化方法优化磁盘缓存吗？请说明原因。**
 
-因为原先的设计是所有的buffer都被组织到 **一条链表** 中，因此如果有多个进程要使用buffer，它们并发的请求只能被顺序地处理。通过哈希桶来代替链表，当要获取和释放缓存块时，只需要对某个哈希桶进行加锁，桶之间的操作就可以并行进行，提供并行性能。
+因为原先的设计是所有的 buffer 都被组织到 **一条链表** 中，因此如果有多个进程要使用 buffer，它们并发的请求只能被顺序地处理。通过哈希桶来代替链表，当要获取和释放缓存块时，只需要对某个哈希桶进行加锁，桶之间的操作就可以并行进行，提供并行性能。
 
 不可以使用内存分配器的优化方法优化磁盘缓存，即不能为每个 CPU 分配属于自己的磁盘缓存区。
 
@@ -141,14 +174,17 @@ struct {
 
 ### 二 实验详细设计
 
-内存分配器：[Memory allocator 内存分配器](http://www.sheniao.top/index.php/os/117.html)
+- 内存分配器：[Memory allocator](https://www.sheniao.top/os/117.html)
+  - 内存分配器做完之后的测试部分：[Memory allocator - test](https://www.sheniao.top/os/116.html)
 
-内存分配器做完之后的测试部分：[Memory allocator 测试](http://www.sheniao.top/index.php/os/116.html)
-
-磁盘缓存：
-
-1. [Buffer cache (1) 分析原始设计](http://www.sheniao.top/index.php/os/120.html)
-2. [Buffer cache (2) timestamp 单项优化](http://www.sheniao.top/index.php/os/122.html)
-3. [Buffer cache (3) 哈希单项优化](http://www.sheniao.top/index.php/os/125.html)
+- 磁盘缓存：
+  - [Buffer cache (1) 分析原始设计](https://www.sheniao.top/os/120.html)
+  - [Buffer cache (2) timestamp 单项优化](https://www.sheniao.top/os/122.html)
+  - [Buffer cache (3) 哈希单项优化](https://www.sheniao.top/os/125.html)
+  - [Buffer cache (4) 使用两项优化](https://www.sheniao.top/os/130.html)
 
 ### 三 实验结果截图
+
+貌似 grade 只能在 CPUS = 3 的情况下跑，用 CPUS = 8 就寄了。
+
+<img src="https://typora-1304621073.cos.ap-guangzhou.myqcloud.com/typora/lab8lock_grade.png" alt="lab8_lock_grade" style="zoom: 67%;" />

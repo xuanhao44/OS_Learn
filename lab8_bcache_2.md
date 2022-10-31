@@ -1,8 +1,12 @@
 # MIT 6.S081 - Lab Lock Buffer cache (2) timestamp 单项优化
 
+## 0 关键字
+
+double check、乐观锁
+
 ## 1 ticks 使用
 
-时间戳可通过 `kernel/trap.c` 中的 ticks 函数获得（ticks 已在 `kernel/def.h` 中声明，bio.c 中可直接使用）。
+时间戳可通过 `kernel/trap.c` 中的 `ticks` 获得（`ticks` 已在 `kernel/def.h` 中声明，`kernel/bio.c` 中可直接使用）。
 
 `kernel/def.h`（部分截取）
 
@@ -15,7 +19,7 @@ extern struct spinlock tickslock;
 void            usertrapret(void);
 ```
 
-使用 ticks 需要取得 tickslock 自旋锁。
+使用 `ticks` 需要取得 `tickslock` 自旋锁。
 
 使用例子：`kernel/sysproc.c`（部分截取）
 
@@ -34,33 +38,33 @@ sys_uptime(void)
 }
 ```
 
-## 2 timestamp 的意义
+## 2 `timestamp` 的意义
 
-timestamp 记录的是什么时间？——是缓存块最后一次被访问的时间。那么依照原来的设计，buf 的 timestamp 被更新的时间应该在 brelse 中（当 refcnt = 0 时）。
+`timestamp` 记录的是什么时间？——是缓存块最后一次被访问的时间。那么依照原来的设计，buf 的 `timestamp` 被更新的时间应该在 brelse 中（当 `refcnt == 0` 时）。
 
-当然，也有人在 bget 的时候更新 timestamp。这也是可以的。上层文件系统在访问一个缓存块，这个完整的过程是必有 bget 和 brelse 的。从这一点上看，他们都能表示 "最后一次被访问"。
+当然，也有人在 bget 的时候更新 `timestamp`。这也是可以的。上层文件系统在访问一个缓存块，这个完整的过程是必有 bget 和 brelse 的。从这一点上看，他们都能表示 "最后一次被访问"。
 
-这里的实现选择在 brelse 中更新。
+本篇的实现选择在 brelse 中更新。
 
 ## 3 来自指导书的 hint 理解
 
-来自指导书的 hint1：**移除空闲缓存块列表(`bcache.head`)**
+- hint1：**移除空闲缓存块列表(`bcache.head`)**
 
-原始的设计维护了一个 LRU 的链表，对这种有序的维护主要是由 brelse 完成的：每当 refcnt = 0 的时候，brelse 就会把 buf 移动到 most recent use 端，这样便一直维持了 LRU 的链表。LRU 链表就是以缓存块最后一次被访问的时间为标志的有序的结构。
+原始的设计维护了一个 LRU 的链表，对这种有序的维护主要是由 brelse 完成的：每当 `refcnt == 0` 的时候，brelse 就会把 buf 移动到 most recent used 端，这样便一直维持了 LRU 的链表。LRU 链表就是以缓存块最后一次被访问的时间为标志的有序的结构。
 
-移除 head 意味着什么？意味着用链表来高效维护的，以 brelse 驱动的设计不再被使用了。我们该如何利用 timestamp 来构建新的设计呢？
+移除 head 意味着什么？意味着用链表来高效维护的，以 brelse 驱动的设计不再被使用了。我们该如何利用 	 来构建新的设计呢？
 
 *这个问题有点大，不太好三两句话说完。下面的设计将会一步步说明。*
 
-让我们先移除这个 head 吧，同时我们也不需要 prev 和 next 了，加上 timestamp。
+让我们先移除这个 head 吧，同时我们也不需要 prev 和 next 了，加上 `timestamp`。
 
 显然所有函数都需要大改了，我们的改造才刚刚开始。
 
-来自导书的 hint2：**此项改动可使`brelse`不再需要锁上`bcache lock`。**
+- hint2：**此项改动可使 `brelse` 不再需要锁上 `bcache lock`。**
 
-原本的设计，brelse 不仅改变了链表的结构，也改变了某个元素的值（b->refcnt - 1），于是需要给这些操作加上 `bcache lock`。
+原本的设计，brelse 不仅改变了链表的结构，也改变了某个元素的值（`b->refcnt--`），于是需要给这些操作加上 `bcache lock`。
 
-如果不加上 `bcache lock`，又没有其他措施的话，是无法满足 brelse 的要求的——据我们上面的分析，brelse 中需要 b->refcnt - 1，还需要 b->timestamp = ticks。怎么办呢？
+如果不加上 `bcache lock`，又没有其他措施的话，是无法满足 brelse 的要求的——据我们上面的分析，brelse 中需要 `b->refcnt--`，还需要 `b->timestamp = ticks`。怎么办呢？
 
 答案是：**为 buf 添加一个新的自旋锁。**在对 buf 进行操作的时候，便加上这个自旋锁，从而不使用 `bcache lock`。
 
@@ -84,7 +88,7 @@ struct buf {
 
 *为了避免把自旋锁和睡眠锁搞混，改变了其名称。*
 
-## 4 改进 part1：binit、bread、brelse、bpin、bunpin
+## 4 改进 part1：`binit`、`bread`、`brelse`、`bpin`、`bunpin`
 
 `binit` 很好说，把所有的锁初始化。因为不需要维护链表了，所以少了很多填充链表的代码。注意要以 bache 开头，不然测试时会出问题。
 
@@ -104,7 +108,7 @@ void binit(void)
 }
 ```
 
-`brelse` 不再需要锁上`bcache lock`，检测到 refcnt = 0 的时候更新 timestamp。至于 `releasesleep(&b->sleeplock);` 是在 spinlock 之前还是之后，应该是都可以的。
+`brelse` 不再需要锁上 `bcache lock`，检测到 `refcnt == 0` 的时候更新 `timestamp`。至于 `releasesleep(&b->sleeplock);` 是放在 spinlock 之前还是之后，应该是都可以的。
 
 ```c
 // Release a locked buffer.
@@ -245,9 +249,9 @@ bget(uint dev, uint blockno)
 }
 ```
 
-可以过 usertests，也就是说安全性可以保证；
+可以过 `usertests`，也就是说安全性可以保证；
 
-但是不能过 bcachetest，下面是输出结果：
+但是不能过 `bcachetest`，下面是输出结果：
 
 ```shell
 $ bcachetest
@@ -353,9 +357,9 @@ bget(uint dev, uint blockno)
 }
 ```
 
-可以过 usertests，也就是说安全性可以保证；
+可以过 `usertests`，也就是说安全性可以保证；
 
-但是不能过 bcachetest，下面是输出结果：
+但是不能过 `bcachetest`，下面是输出结果：
 
 ```shell
 $ bcachetest
@@ -380,7 +384,7 @@ test1 OK
 
 可以看到，锁争用的情况比严格的情况好多了，但是既不能通过测试，也还是不如原本的设计。
 
-### 5.3 查找命中不用大锁保护（有错误）
+### 5.3 查找命中不用 `bcache.lock` 保护（有错误）
 
 有人提出，bget 在查找的时候不需要 `bcache.lock`，只需要在未命中的时候开始加上 `bcache.lock`。
 
@@ -445,7 +449,7 @@ bget(uint dev, uint blockno)
 }
 ```
 
-可以过 bcachetest，tot = 0。
+可以过 `bcachetest`，tot = 0。
 
 ```shell
 $ bcachetest
@@ -470,9 +474,9 @@ test1 OK
 
 这真令人开心！
 
-但是，usertests 却失败了，也就是说，正确性没有了——这是简直是晴天霹雳！
+但是，`usertests` 却失败了，也就是说，正确性没有了——这是简直是晴天霹雳！
 
-先测试 bcachetest，再测试 usertests 会有如下结果。
+先测试 `bcachetest`，再测试 `usertests` 会有如下结果。
 
 ```shell
 $ usertests
@@ -480,7 +484,7 @@ usertests starting
 test manywrites: panic: create: dirlink
 ```
 
-先测试 usertests 会有如下结果。
+先测试 `usertests` 会有如下结果。
 
 ```shell
 $ usertests
@@ -492,17 +496,17 @@ test manywrites: panic: ilock: no type
 
 ## 5.4 安全性处理（1）
 
-5.3 bget 逻辑为：先查找数组是否存在缓存块，存在就返回，不存在就获取大锁，从数组中拿一个 refcnt = 0 的缓存块来使用。
+5.3 bget 逻辑为：先查找数组是否存在缓存块，存在就返回，不存在就获取 `bcache.lock` ，从数组中拿一个 `refcnt == 0` 的缓存块来使用。
 
-问题是你**获取大锁后没有再次检测是不是缓存块已经存在了**，也就是说，之前检测命中的时候没有缓存块，但是再次检测命中的时候有这个缓存块了，你如果不去再次检测，那就不知道这种情况，就会拿一个 LRU 块去指向这个磁盘块——这样数组里面就有两个缓存块指向同一个磁盘块了。
+问题是你**获取 `bcache.lock` 后没有再次检测是不是缓存块已经存在了**，也就是说，之前检测命中的时候没有缓存块，但是再次检测命中的时候有这个缓存块了，你如果不去再次检测，那就不知道这种情况，就会拿一个 LRU 块去指向这个磁盘块——这样数组里面就有两个缓存块指向同一个磁盘块了。
 
-也就是说需要在获取大锁后再次检测。那这样和原本用大锁包住整个 bget 有什么区别呢？为啥要做检测，加锁，再次检测的事情呢？——答案也许很明显了，这是一个很大的 double check！
+也就是说需要在获取 `bcache.lock` 后再次检测。那这样和原本用 `bcache.lock` 包住整个 bget 有什么区别呢？为啥要做检测，加锁，再次检测的事情呢？——答案也许很明显了，这是一个很大的 double check！
 
 *double check 爽，一直 double check 一直爽.jpg*
 
 再次检查的部分好说，那我们该怎么写 ”第一次检测" 呢？
 
-到底时要加大锁和小锁，还是只加小锁呢？
+到底是加 `bcache.lock` 和 `b->spinlock` ，还是只加 `b->spinlock` 呢？
 
 ```c
   // 第一次检测, 99% 会命中在第一次检测
@@ -536,19 +540,19 @@ test manywrites: panic: ilock: no type
 
 - 如果都加，那么就能保证安全性（usertests 能过），但是 test1 过不了，tot 过大；
 
-- 如果只加小锁，那么 tot 等于 0，但是不安全按（usertests 报 panic）。
+- 如果只加 `b->spinlock` ，那么 tot 等于 0，但是不安全按（usertests 报 panic）。
 
-这便使人犯难了。不加大锁不安全，加了大锁争用多，如之奈何？
+这便使人犯难了。不加 `bcache.lock` 不安全，加了 `bcache.lock` 争用多，如之奈何？
 
 ## 5.4 安全性处理（2）
 
-来看看只加小锁的问题吧。
+来看看只加 `b->spinlock` 的问题吧。
 
-未命中寻找 LRU 块时，找到了一个这样的块，正准备更新，但是这个块被另一个进程在第一次无大锁检测阶段拿走了。（注意为何能被拿走，可以想一想）
+未命中寻找 LRU 块时，找到了一个这样的块，正准备更新，但是这个块被另一个进程在第一次无 `bcache.lock` 检测阶段拿走了。（注意为何能被拿走，可以想一想）
 
-当第一次检测也加上大锁的时候，就不会发生这样的事，因为大锁保护了数组，使其在一个进程访问时不会被另一个进程访问。
+当第一次检测也加上 `bcache.lock` 的时候，就不会发生这样的事，因为 `bcache.lock` 保护了数组，使其在一个进程访问时不会被另一个进程访问。
 
-同时注意到，能被拿走的原因正是因为一个很小的逻辑漏洞——**遍历寻找 timestamp 最小的缓存块，但是当这个块的时间戳最小时应该会一直拿着它的锁**。而我之前的实现里，为了方便，其实一直忽视了这个细节，因为不太好处理。
+同时注意到，能被拿走的原因正是因为一个很小的逻辑漏洞——**遍历寻找 `timestamp` 最小的缓存块，但是当这个块的时间戳最小时应该会一直拿着它的锁**。而我之前的实现里，为了方便，其实一直忽视了这个细节，因为不太好处理。
 
 了解概念：乐观锁和悲观锁。
 
@@ -558,7 +562,46 @@ test manywrites: panic: ilock: no type
 
 我们可以选择悲观锁，也就是一直锁着这个时间戳最小的块；也可以选择乐观锁，允许你被抢走，我到时候再来检查一次，如果确实被抢走了，我就再查找一次。
 
-这里我们使用乐观锁。怎么才是被抢走了呢？那自然是用 refcnt == 0 来判断。如果真的被抢走了，那么 refcnt 的值就不会是 0 了。如何重试呢？我们直接使用 goto 返回到再次检测的位置。
+这里我们使用乐观锁。怎么才是被抢走了呢？那自然是用 `refcnt == 0` 来判断。如果真的被抢走了，那么 refcnt 的值就不会是 0 了。如何重试呢？我们直接使用 goto 返回到再次检测的位置。
+
+整体的判断逻辑应该形如：
+
+```c
+  if (lrub == (void *)0) // no unused buf, should panic
+  {
+    release(&bcache.lock);
+    panic("bget: no buffers");
+  }
+  else if (lrub != (void *)0 && lrub->refcnt == 0) // unsafe check
+  {
+  }
+  else // grab by other's stage1
+  {
+    // release(&bcache.lock); no need
+    goto LOOP; // goto stage2
+  }
+```
+
+1. 如果没有找到 lrub（lrub 为空），那么还是需要 panic 的。
+2. 如果找到了 lrub（lrub 不为空），但是被第一阶段抢走了（refcnt 不等于 0），那么再找一遍。
+3. 如果找到了 lrub（lrub 不为空），但是也没被第一阶段抢走（refcnt 等于 0），那么就确定了，可以开始替换。
+
+goto 的位置需要斟酌：
+
+```c
+  acquire(&bcache.lock);
+// stage2
+LOOP:
+  for (b = bcache.buf; b < bcache.buf + NBUF; b++)
+```
+
+我们可以看到，在需要 goto 的时候，我们都没有 `release(&bcache.lock)`，这样，我们就可以回到 acquire 之后，并不需要先 release 再 acquire。
+
+你可以选择释放，也可以选择不释放。不释放的话，就要把 LOOP 加到 acquire 之前。
+
+有时，这种选择是会关联到 goto 的位置。幸运的是，在本次实现中，不管选择释放与否，我们都要把 LOOP 的位置放在第二次查找命中前。（之后再用到这个方法就要斟酌一下）
+
+`bget`：
 
 ```c
 static struct buf *
@@ -566,8 +609,8 @@ bget(uint dev, uint blockno)
 {
   struct buf *b;
 
-  // 第一次检测, 99% 会命中在第一次检测
-  // 但是没有大锁保护, 它可能会抢走别人的
+  // stage1: 第一次检测, 99% 会命中在第一次检测
+  // 但是没有 `bcache.lock` 保护, 它可能会抢走别人的
   for (b = bcache.buf; b < bcache.buf + NBUF; b++)
   {
     // unsafe check
@@ -589,7 +632,7 @@ bget(uint dev, uint blockno)
   }
 
   acquire(&bcache.lock);
-// 再次检测
+// stage2
 LOOP:
   for (b = bcache.buf; b < bcache.buf + NBUF; b++)
   {
@@ -631,15 +674,23 @@ LOOP:
     }
   }
 
-  if (lrub != (void *)0 && lrub->refcnt == 0)
+  if (lrub == (void *)0) // no unused buf, should panic
   {
+    release(&bcache.lock);
+    panic("bget: no buffers");
+  }
+  else if (lrub != (void *)0 && lrub->refcnt == 0) // unsafe check
+  {
+    // acquire lock
     acquire(&lrub->spinlock);
+    // double check
     if (lrub != (void *)0 && lrub->refcnt == 0)
     {
       lrub->dev = dev;
       lrub->blockno = blockno;
       lrub->valid = 0; // set valid 0, wait for virtio_disk_rw()
       lrub->refcnt = 1;
+
       release(&lrub->spinlock);
       release(&bcache.lock);
       acquiresleep(&lrub->sleeplock);
@@ -652,13 +703,11 @@ LOOP:
       goto LOOP; // goto second check
     }
   }
-  else
+  else // grab by other's stage1
   {
     // release(&bcache.lock); no need
-    goto LOOP; // goto second check
+    goto LOOP; // goto stage2
   }
-
-  panic("bget: no buffers");
 }
 ```
 
@@ -772,8 +821,8 @@ bget(uint dev, uint blockno)
 {
   struct buf *b;
 
-  // 第一次检测, 99% 会命中在第一次检测
-  // 但是没有大锁保护, 它可能会抢走别人的
+  // stage1: 第一次检测, 99% 会命中在第一次检测
+  // 但是没有 `bcache.lock` 保护, 它可能会抢走别人的
   for (b = bcache.buf; b < bcache.buf + NBUF; b++)
   {
     // unsafe check
@@ -795,7 +844,7 @@ bget(uint dev, uint blockno)
   }
 
   acquire(&bcache.lock);
-// 再次检测
+// stage2
 LOOP:
   for (b = bcache.buf; b < bcache.buf + NBUF; b++)
   {
@@ -837,15 +886,23 @@ LOOP:
     }
   }
 
-  if (lrub != (void *)0 && lrub->refcnt == 0)
+  if (lrub == (void *)0) // no unused buf, should panic
   {
+    release(&bcache.lock);
+    panic("bget: no buffers");
+  }
+  else if (lrub != (void *)0 && lrub->refcnt == 0) // unsafe check
+  {
+    // acquire lock
     acquire(&lrub->spinlock);
+    // double check
     if (lrub != (void *)0 && lrub->refcnt == 0)
     {
       lrub->dev = dev;
       lrub->blockno = blockno;
       lrub->valid = 0; // set valid 0, wait for virtio_disk_rw()
       lrub->refcnt = 1;
+
       release(&lrub->spinlock);
       release(&bcache.lock);
       acquiresleep(&lrub->sleeplock);
@@ -858,13 +915,11 @@ LOOP:
       goto LOOP; // goto second check
     }
   }
-  else
+  else // grab by other's stage1
   {
     // release(&bcache.lock); no need
-    goto LOOP; // goto second check
+    goto LOOP; // goto stage2
   }
-
-  panic("bget: no buffers");
 }
 
 // Return a locked buf with the contents of the indicated block.

@@ -57,7 +57,7 @@ struct kmem
 // NCPU: from kernel/param.h; 8 - maximum number of CPUs
 ```
 
-- 使用 cpuid() 函数会返回当前 CPU 的 id 号（范围0 ~ NCPU - 1）。在调用 cpuid() 并使用其返回值的过程中需要关闭中断。使用 push_off() 可以关闭中断，使用 pop_off() 可以打开中断。
+- 使用 `cpuid()` 函数会返回当前 CPU 的 id 号（范围0 ~ NCPU - 1）。在调用 `cpuid()` 并使用其返回值的过程中需要关闭中断。使用 `push_off()` 可以关闭中断，使用 `pop_off()` 可以打开中断。
 
 使用的时候大致如：
 
@@ -72,19 +72,19 @@ pop_off();
 
 里面的代码尽量不包含与 cpuid 无关的代码。id 不在其他地方有效用。
 
-- 请使用 initlock() 初始化锁，并 **要求锁名字以 kmem 开头** 。
+- 请使用 `initlock()` 初始化锁，并 **要求锁名字以 kmem 开头** 。
 
 ```c
 void kinit()
 {
   for (int i = 0; i < NCPU; i++)
-    initlock(&kmems[i].lock, ”kmems“);
+    initlock(&kmems[i].lock, "kmems");
 
   freerange(end, (void *)PHYSTOP);
 }
 ```
 
-freelist 变多了，要初始化的锁也多了。（snprintf 不太会用，就没管了，总之是输出一些锁的信息的）
+freelist 变多了，要初始化的锁也多了。（`snprintf` 不太会用，就没管了，总之是输出一些锁的信息的）
 
 - 使用 freerange 为所有运行 freerange 的 CPU 分配空闲的内存。
 
@@ -197,7 +197,7 @@ struct kmem
 void kinit()
 {
   for (int i = 0; i < NCPU; i++)
-    initlock(&kmems[i].lock, ”kmems“);
+    initlock(&kmems[i].lock, "kmems");
 
   freerange(end, (void *)PHYSTOP);
 }
@@ -317,4 +317,4 @@ test2 OK
 
 你可以看到，tot = 0，也就是说基本没有锁争用。
 
-usertests sbrkmuch 和 usertest 输出太多，就不记录了。
+`usertests sbrkmuch` 和 `usertest` 输出太多，就不记录了。

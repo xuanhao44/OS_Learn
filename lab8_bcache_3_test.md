@@ -1,4 +1,4 @@
-# MIT 6.S081 - Lab Lock Buffer cache (3) 哈希单项优化 - 死锁处理
+# MIT 6.S081 - Lab Lock Buffer cache (3) 哈希单项优化 - 死锁处理以及 test and set 的 xv6 实现
 
 上一篇文章提到死锁的问题没有被处理。虽然不会导致评测不成功，但是我们还是想想办法把这个问题处理一下。
 
@@ -329,7 +329,7 @@ LOOP:
 
 两个测试都可以过。看 tot 的值，效果不错。
 
-建议按照先测试 bcachetest，再测试 usertests 的顺序。因为 bcachetest 会记录 usertests 的竞争的情况，导致 fetch-and-add 数较大，tot 值也很大，但是由于 test0 只记录 test0 的数据，所以又可以过 test0，会显示 OK。
+建议按照先测试 `bcachetest`，再测试 `usertests` 的顺序。因为 `bcachetest` 会记录 `usertests` 的竞争的情况，导致 fetch-and-add 数较大，tot 值也很大，但是由于 test0 只记录 test0 的数据，所以又可以过 test0，会显示 OK。
 
 ```c
 $ bcachetest
@@ -371,4 +371,4 @@ test1 OK
 
 我们把 CPU 数量调整为 8，这样在多核的情况下，竞争会更加明显，也就能更容易的显示出是否发生了竞争。
 
-我们测试 bcachetest，发现没有输出，即没有这种情况；我们测试 usertest，发现有多条输出夹杂在其他输出中，那么说明有这种情况。这说明我们的优化是有效的。
+我们测试 `bcachetest`，发现没有输出，即没有这种情况；我们测试 `usertest`，发现有多条输出夹杂在其他输出中，那么说明有这种情况。这说明我们的优化是有效的。

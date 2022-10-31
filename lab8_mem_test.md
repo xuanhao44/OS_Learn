@@ -4,11 +4,11 @@
 
 ## 1 某个思路：随机
 
-**kmems 和 cpuid 一定要对应起来吗？**
+**freelist 和 cpuid 一定要对应起来吗？**
 
 既不对应，也不能从一个固定的位置去拿，应该怎么办？只能是随机了。
 
-同时猜想：是不是在 kalloc 和 kfree 的时候足够随机就能避免竞争？大家的行为都会很随机，那这样竞争的概率不会很小吗？那么即使有多个 kalloc 和 kfree 同时发生，但是由于他们访问的 kmems 不同，所以不会产生很多锁争用。
+同时猜想：是不是在 kalloc 和 kfree 的时候足够随机就能避免竞争？大家的行为都会很随机，那这样竞争的概率不会很小吗？那么即使有多个 kalloc 和 kfree 同时发生，但是由于他们访问的 freelist 不同，所以不会产生很多锁争用。
 
 在这种情况下，可初步预测：
 
@@ -117,8 +117,10 @@ struct kmem
 
 经测试发现：
 
-- 在 CPU 数为 8 的情况下，KMEMS 高于某个值后，在编译 xv6 时就会 panic，该值为 315；成功编译的情况下，KMEMS 高于某个值后，测试程序 usertests sbrkmuch 也会 panic，该值为 310；上限值 315 和 310 与 CPU 数无关；不保证该值是准确值，不保证一直有效，仅供参考。
-- kalloctest test1 如果输出太多会崩掉，故去掉大量输出，下面是原因和调整方法。
+- 在 CPU 数为 8 的情况下，KMEMS 高于某个值后，在编译 xv6 时就会 panic，该值为 315；
+- 成功编译的情况下，KMEMS 高于某个值后，测试程序 `usertests sbrkmuch` 也会 panic，该值为 310；
+- 上限值 315 和 310 与 CPU 数无关；不保证该值是准确值，不保证一直有效，仅供参考。
+- `kalloctest` test1 如果输出太多会崩掉，故去掉大量输出，下面是原因和调整方法。
 
 `user/kalloctest.c` 片段：
 
@@ -157,7 +159,7 @@ int ntas(int print)
 
 注意到 SZ 只有 4096，输出多起来就会出错。
 
-于是把 `kernel/spinlock.c:statslock()` 的一个循环里输出 kmem.lock 的部分注释掉。
+于是把 `kernel/spinlock.c:statslock()` 的一个循环里输出 `kmem.lock` 的部分注释掉。
 
 ```c
 for(int i = 0; i < NLOCK; i++) {
@@ -295,7 +297,7 @@ kalloc(void)
 }
 ```
 
-测试结果：kalloctest test1 没过，test2 根本无法开始；usertests sbrkmuch、usertests 也都卡住了！
+测试结果：`kalloctest` test1 没过，test2 根本无法开始；`usertests sbrkmuch`、`usertests` 也都卡住了！
 
 ### 3.1 不可完全随机的 kalloc
 
@@ -317,15 +319,17 @@ do
 } while (!r);
 ```
 
-假设一种情况：使用的内存过多，各个 kmems 的 freelist 都没有多少 free page 了。
+假设一种情况：使用的内存过多，各个 freelist 都没有多少 free page 了。
 
 对应到这段代码，我们只是随机的选取了一个 freelist，然后去取它的 free page，如果没有的话就再次随机的选取一个 freelist。
 
-然而各个 kmems 的 freelist 都没有多少 free page 了，故而随机选取一次，能找到 free page 的概率是很低的。
+然而各个 freelist 都没有多少 free page 了，故而随机选取一次，能找到 free page 的概率是很低的。
 
-从整体上说，随着分配回收 free page 的进行，如果进程申请的内存比释放的 free page 多，所有 freelist 的 free page 是在不断减少的，随机选取一次，能找到 free page 的概率会降低；如果有 N 个 freelist 没有 free page 了，那么随机选取一次，能找到 free page 的概率就是 (1 - N/KMEMS)。
+从整体上说，随着分配回收 free page 的进行，如果进程申请的内存比释放的 free page 多，所有 freelist 的 free page 是在不断减少的，随机选取一次，能找到 free page 的概率会降低；如果有 N 个 freelist 没有 free page 了，那么随机选取一次，能找到 free page 的概率就是 $(1 - N/{KMEMS})$。
 
-既然不能完全随机，那么我们改变策略：先随机选取一次；如果没有得到 free page，就遍历所有 freelist 去寻找 free page。
+既然不能完全随机，那么我们改变策略：
+
+先随机选取一次；如果没有得到 free page，就遍历所有 freelist 去寻找 free page。
 
 ```c
 void *
@@ -364,7 +368,7 @@ kalloc(void)
 }
 ```
 
-测试结果：修改得到的程序虽然不能过 test1，但是 test2、usertests sbrkmuch、usertests 可以通过。
+测试结果：修改得到的程序虽然不能过 test1，但是 test2、`usertests sbrkmuch`、`usertests` 可以通过。
 
 ### 3.2 随机是否起效
 
@@ -383,13 +387,13 @@ int randN(void)
 
 *考虑一下为什么没有像平常那样关闭和打开中断：使用 cpuid 时，我们不在意 CPU 是否切换——这对随机数的生成并没有实质的影响。*
 
-测试结果：修改得到的程序不能过 test1，test2、usertests sbrkmuch、usertests 可以通过。但是 test1 的 tot 值明显的变小了很多。就是从上万到了两位数，这是个很大的进步！
+测试结果：修改得到的程序不能过 test1，test2、`usertests sbrkmuch`、`usertests` 可以通过。但是 test1 的 tot 值明显的变小了很多。就是从上万到了两位数，这是个很大的进步！
 
 *tot 的值表现的很随机，在两位数到五位数之间波动。但是能到两位数了。*
 
 ### 3.3 考虑锁：double check
 
-一个可能出现的情况是所有的 freelist 中剩余的 free page 不多，在这种情况下，很多加锁的步骤都是无效的，开销很大，且增加了很多锁争用。
+一个可能出现的情况是所有 freelist 中剩余的 free page 不多。在这种情况下，很多加锁的步骤都是无效的，开销很大，且增加了很多锁争用。
 
 **采用 “不安全 check + 加锁 double check” 的处理模式：利用某些可以允许的不安全来换取缩小的锁范围，然后再使用额外的手段保证正确性。**
 
@@ -441,7 +445,7 @@ kalloc(void)
 }
 ```
 
-测试结果：修改得到的程序不能过 test1，test2、usertests sbrkmuch、usertests 可以通过。进一步优化的效果并不是很明显，tot 的值表现的很随机，在两位数到五位数之间波动。
+测试结果：修改得到的程序不能过 test1，test2、`usertests sbrkmuch`、`usertests` 可以通过。进一步优化的效果并不是很明显，tot 的值表现的很随机，在两位数到五位数之间波动。
 
 ### 3.4 考虑更随机的遍历
 
@@ -468,7 +472,7 @@ for (int i = 0; (!r) && (i < KMEMS); i++)
 }
 ```
 
-测试结果：和 3.3 一样，修改得到的程序不能过 test1，test2、usertests sbrkmuch、usertests 可以通过。进一步优化的效果并不是很明显，tot 的值表现的很随机，在两位数到五位数之间波动。
+测试结果：和 3.3 一样，修改得到的程序不能过 test1，test2、`usertests sbrkmuch`、`usertests` 可以通过。进一步优化的效果并不是很明显，tot 的值表现的很随机，在两位数到五位数之间波动。
 
 ### 4 最终优化结果
 
@@ -615,7 +619,7 @@ kalloc(void)
 
 测试结果：
 
-修改得到的程序不能过 test1，test2、usertests sbrkmuch、usertests 可以通过。进一步优化的效果并不是很明显，tot 的值表现的很随机，在两位数到五位数之间波动。
+修改得到的程序不能过 test1，test2、`usertests sbrkmuch`、`usertests` 可以通过。进一步优化的效果并不是很明显，tot 的值表现的很随机，在两位数到五位数之间波动。
 
 ```shell
 $ kalloctest
@@ -636,21 +640,25 @@ total free number of pages: 32496 (out of 32768)
 test2 OK
 ```
 
-usertests 输出太多，略。
+`usertests` 输出太多，略。
 
 ## 5 总结
 
-kmems 和 cpuid 对应的设计是很正确的。不管是 kfree 还是 kalloc，每次都优先从自己的 freelist 开始取或者还，这样减少了很多的锁争用。
+freelist 和 cpuid 对应的设计是很正确的。不管是 kfree 还是 kalloc，每次都优先从自己的 freelist 开始取或者还，这样减少了很多的锁争用。
 
 kfree、kalloc 随机还和取 free page 的设计是有缺陷的。
 
-通过这一系列测试，说明了 cpuid 对应设计的优点。
+通过这一系列测试，说明了 cpuid 对应 freelist 设计的优点。
 
 再返回去看之前的问题：
 
-> 是不是在 kalloc 和 kfree 的时候足够随机就能避免竞争？大家的行为都会很随机，那这样竞争的概率不会很小吗？那么即使有多个 kalloc 和 kfree 同时发生，但是由于他们访问的 kmems 不同，所以不会产生很多锁争用。
+> 是不是在 kalloc 和 kfree 的时候足够随机就能避免竞争？
+>
+> 大家的行为都会很随机，那这样竞争的概率不会很小吗？
+>
+> 那么即使有多个 kalloc 和 kfree 同时发生，但是由于他们访问的 freelist 不同，所以不会产生很多锁争用。
 
-另外意识到一个问题。在 3.3 中，我们发现过多的 freelist 可能会让遍历的过程变得更漫长，以及更多的锁和锁争用。这是我们不希望的。我们本来希望通过增加 freelist 的数量来使得竞争概率减小，但是最后却造成了更多的锁争用。
+在 3.3 中，我们发现过多的 freelist 可能会让遍历的过程变得更漫长，以及更多的锁和锁争用。这是我们不希望的。我们本来希望通过增加 freelist 的数量来使得竞争概率减小，但是最后却造成了更多的锁争用。
 
 大佬指点，从另外的角度分析：
 
@@ -677,9 +685,9 @@ init 的时候，通过 free 为每个 CPU 都提供了一个 page 数较为均�
 
 kalloc、kfree 随机设计：
 
-init 的时候，所有的 free page 被较为均匀的分配到 freelist 中，而并不是 CPU 的“预备” freelist，可以说 CPU 并不预先拥有有一定量 free page 的 freelist 的了。也就是说，进程在申请内存的时候，总是去 kmems[KMEMS] 中去随机的去取；释放内存的时候，总是去 kmems[KMEMS] 中去随机的释放。
+init 的时候，所有的 free page 被较为均匀的分配到 freelist 中，而并不是 CPU 的 “预备” freelist，可以说 CPU 并不预先拥有有一定量 free page 的 freelist 的了。也就是说，进程在申请内存的时候，总是去 `kmems[KMEMS]` 中去随机的去取；释放内存的时候，总是去 `kmems[KMEMS]` 中去随机的释放。
 
-进一步，根据局部性，应该为“连续申请并释放”这个事件的再次发生提供便利，但是这种随机的设计却并没有提供着这种便利：不管是第一次，第二次，还是第 N 次，都是在 kmems[KMEMS] 中随机取放——这是很随机的，无记忆性的，没有根据进程之前的行为进行预测或者优化的。**你可以认为这样的设计并没有利用局部性。**
+进一步，根据局部性，应该为“连续申请并释放”这个事件的再次发生提供便利，但是这种随机的设计却并没有提供着这种便利：不管是第一次，第二次，还是第 N 次，都是在 `kmems[KMEMS]` 中随机取放——这是很随机的，无记忆性的，没有根据进程之前的行为进行预测或者优化的。**你可以认为这样的设计并没有利用局部性。**
 
 ### 6.2 从某个称作“局面”的东西去考虑
 
