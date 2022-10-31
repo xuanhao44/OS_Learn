@@ -1,5 +1,9 @@
 # MIT 6.S081 - Lab Lock Buffer cache (4) 使用两项优化
 
+[OS_Learn/bio_mix.c at main · xuanhao44/OS_Learn (github.com)](https://github.com/xuanhao44/OS_Learn/blob/main/code/lab8/bio_mix.c)
+
+【仅包含部分代码，不能运行请自行查看文章补充相关内容】
+
 终于到最后的时刻了。我们将尝试使用两项优化。所有的原理和细节，之前的文章都有提到过，我们需要分析现有情况，来做出最好的选择。
 
 ## 1 思路

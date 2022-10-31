@@ -1,5 +1,9 @@
 # MIT 6.S081 - Lab Lock Memory allocator - test
 
+代码传送门：[OS_Learn/kalloc_test.c at main · xuanhao44/OS_Learn (github.com)](https://github.com/xuanhao44/OS_Learn/blob/main/code/lab8/kalloc_test.c)
+
+【仅包含部分代码，不能运行请自行查看文章补充相关内容】
+
 本篇是我的测试过程，建议写完第一个 part 再来看。
 
 ## 1 某个思路：随机

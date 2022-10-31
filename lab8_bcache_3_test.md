@@ -1,5 +1,9 @@
 # MIT 6.S081 - Lab Lock Buffer cache (3) 哈希单项优化 - 死锁处理以及 test and set 的 xv6 实现
 
+代码传送门：[OS_Learn/bio_hash_try_acquire.c at main · xuanhao44/OS_Learn (github.com)](https://github.com/xuanhao44/OS_Learn/blob/main/code/lab8/bio_hash_try_acquire.c)
+
+【仅包含部分代码，不能运行请自行查看文章补充相关内容】
+
 上一篇文章提到死锁的问题没有被处理。虽然不会导致评测不成功，但是我们还是想想办法把这个问题处理一下。
 
 ## 0 尝试解决死锁

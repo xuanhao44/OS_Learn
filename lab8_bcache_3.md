@@ -1,5 +1,9 @@
 # MIT 6.S081 - Lab Lock Buffer cache (3) 哈希单项优化
 
+代码传送门：[OS_Learn/bio_hash.c at main · xuanhao44/OS_Learn (github.com)](https://github.com/xuanhao44/OS_Learn/blob/main/code/lab8/bio_hash.c)
+
+【仅包含部分代码，不能运行请自行查看文章补充相关内容】
+
 之前总算是把 `timestamp` 单项优化写出来了，那么现在就来看看哈希的单项优化吧。
 
 ## 1 哈希桶、散列函数

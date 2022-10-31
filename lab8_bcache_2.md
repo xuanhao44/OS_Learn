@@ -1,8 +1,10 @@
 # MIT 6.S081 - Lab Lock Buffer cache (2) timestamp 单项优化
 
-## 0 关键字
+关键字：double check、乐观锁
 
-double check、乐观锁
+代码传送门：[OS_Learn/bio_timestamp.c at main · xuanhao44/OS_Learn (github.com)](https://github.com/xuanhao44/OS_Learn/blob/main/code/lab8/bio_timestamp.c)
+
+【仅包含部分代码，不能运行请自行查看文章补充相关内容】
 
 ## 1 ticks 使用
 

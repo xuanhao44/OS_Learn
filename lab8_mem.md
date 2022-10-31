@@ -1,5 +1,9 @@
 # MIT 6.S081 - Lab Lock Memory allocator
 
+代码传送门：[OS_Learn/kalloc.c at main · xuanhao44/OS_Learn (github.com)](https://github.com/xuanhao44/OS_Learn/blob/main/code/lab8/kalloc.c)
+
+【仅包含部分代码，不能运行请自行查看文章补充相关内容】
+
 *PS：所有 kmem 在不需要仔细区分的情况下都被称为 freelist。*
 
 ## 1 内存情况
