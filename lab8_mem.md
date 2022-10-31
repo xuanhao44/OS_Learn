@@ -286,7 +286,7 @@ void *kalloc(void)
 }
 ```
 
-## 评测
+## 6 评测
 
 1. `kalloctest` 程序有 test1 和 test2。
    1. test1：主要是检测锁争用。

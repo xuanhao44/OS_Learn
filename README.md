@@ -26,10 +26,6 @@
 
 看不来英文原文可以看这个。
 
-专业名词：[xv6手册与代码笔记 - 知乎 (zhihu.com)](https://www.zhihu.com/column/c_1345025252318007298)
-
-有事没事看一看，熟悉一下。
-
 其他人的课程学习笔记：
 
 [MIT 6.S081 Lecture Notes | Xiao Fan (樊潇) (fanxiao.tech)](https://fanxiao.tech/posts/MIT-6S081-notes/)
