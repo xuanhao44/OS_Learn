@@ -181,10 +181,13 @@ void remove(struct buf *head, struct buf *b_target)
   - [Buffer cache (1) 分析原始设计](https://www.sheniao.top/os/120.html)
   - [Buffer cache (2) timestamp 单项优化](https://www.sheniao.top/os/122.html)
   - [Buffer cache (3) 哈希单项优化](https://www.sheniao.top/os/125.html)
+    - [Buffer cache (3) 哈希单项优化 - 死锁处理以及 test and set 的 xv6 实现](https://www.sheniao.top/os/127.html)
   - [Buffer cache (4) 使用两项优化](https://www.sheniao.top/os/130.html)
 
 ### 三 实验结果截图
 
 貌似 grade 只能在 CPUS = 3 的情况下跑，用 CPUS = 8 就寄了。
+
+如果电脑 CPU 性能太差，出现超时导致 FAIL 的问题。虽然如下的 grade 评测通过，但是可以看到 175.0s 和 `grade_lab_lock` 中的 `timeout = 200` 已经很接近了，这次评测成功只是偶然。你需要换一台更好的电脑哦。
 
 <img src="https://typora-1304621073.cos.ap-guangzhou.myqcloud.com/typora/lab8lock_grade.png" alt="lab8_lock_grade" style="zoom: 67%;" />
