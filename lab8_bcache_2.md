@@ -562,20 +562,11 @@ test manywrites: panic: ilock: no type
 2. 如果找到了 lrub（lrub 不为空），但是被第一阶段抢走了（refcnt 不等于 0），那么再找一遍。
 3. 如果找到了 lrub（lrub 不为空），但是也没被第一阶段抢走（refcnt 等于 0），那么就确定了，可以开始替换。
 
-goto 的位置需要斟酌：
-
-```c
-  acquire(&bcache.lock);
-// stage2
-LOOP:
-  for (b = bcache.buf; b < bcache.buf + NBUF; b++)
-```
+goto 的 LOOP 位置需要斟酌：
 
 我们可以看到，在需要 goto 的时候，我们都没有 `release(&bcache.lock)`，这样，我们就可以回到 acquire 之后，并不需要先 release 再 acquire。
 
-你可以选择释放，也可以选择不释放。不释放的话，就要把 LOOP 加到 acquire 之前。
-
-这种选择会关联到 LOOP 的位置。如果我们不释放这个锁，那么我们可以把 LOOP 放在未命中查找替换前。
+不仅如此，如果我们不释放这个锁，那么我们**可以把 LOOP 放在未命中查找替换前**。
 
 理由：当前进程没能从数组中查找命中，进入了到未命中查找替换的过程；其他进程就算要访问相同的文件，到数组中查找命中，一样会未命中，同时会被阻挡在 `bcache.lock` 的外面，直到之前那个进程替换结束，释放 `bcache.lock` 之后。所以当前进程不用担心会有其他进程能够使得自己在 goto 之后重新查找到命中——因为这个文件根本就还没被缓存。所以在 goto 回来之后，可以不用再查找命中一遍，直接再去数组中找 LRU 块。
 
