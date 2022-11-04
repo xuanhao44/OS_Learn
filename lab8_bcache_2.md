@@ -496,65 +496,39 @@ test manywrites: panic: ilock: no type
 
 这种改进到底出了什么错呢？
 
-## 5.4 安全性处理（1）
+### 5.4 安全性处理
+
+#### 5.4.1 安全性处理（1）
 
 5.3 bget 逻辑为：先查找数组是否存在缓存块，存在就返回，不存在就获取 `bcache.lock` ，从数组中拿一个 `refcnt == 0` 的缓存块来使用。
 
 问题是你**获取 `bcache.lock` 后没有再次检测是不是缓存块已经存在了**，也就是说，之前检测命中的时候没有缓存块，但是再次检测命中的时候有这个缓存块了，你如果不去再次检测，那就不知道这种情况，就会拿一个 LRU 块去指向这个磁盘块——这样数组里面就有两个缓存块指向同一个磁盘块了。
 
-也就是说需要在获取 `bcache.lock` 后再次检测。那这样和原本用 `bcache.lock` 包住整个 bget 有什么区别呢？为啥要做检测，加锁，再次检测的事情呢？——答案也许很明显了，这是一个很大的 double check！
-
-*double check 爽，一直 double check 一直爽.jpg*
+所以，如果到了未命中查找阶段，我们需要在获取 `bcache.lock` 后再次查找命中。
 
 再次检查的部分好说，那我们该怎么写 ”第一次检测" 呢？
 
 到底是加 `bcache.lock` 和 `b->spinlock` ，还是只加 `b->spinlock` 呢？
 
-```c
-  // 第一次检测, 99% 会命中在第一次检测
-  // Is the block already cached?
-  for (b = bcache.buf; b < bcache.buf + NBUF; b++)
-  {
-    // unsafe check
-    if (b->dev == dev && b->blockno == blockno)
-    {
-      // acquire lock
-      acquire(&bcache.lock);
-      acquire(&b->spinlock);
-      // double check
-      if (b->dev == dev && b->blockno == blockno)
-      {
-        b->refcnt++; // 该块被引用次数 ++
-        release(&b->spinlock);
-        release(&bcache.lock);
-        acquiresleep(&b->sleeplock);
-        return b;
-      }
-      else {
-        release(&b->spinlock);
-        release(&bcache.lock);
-      }
-    }
-  }
-```
+一些测试结果：
 
-测试结果：
+- 如果都加，那么就能保证安全性（`usertests` 能过），但是 test1 过不了，tot 过大；
 
-- 如果都加，那么就能保证安全性（usertests 能过），但是 test1 过不了，tot 过大；
+- 如果只加 `b->spinlock` ，那么 tot 等于 0，但是不安全（`usertests` 报 panic）。
 
-- 如果只加 `b->spinlock` ，那么 tot 等于 0，但是不安全按（usertests 报 panic）。
+这便使人犯难。我们知道加了 `bcache.lock` 争用会多，这没问题。可是我们的未查找命中已经添加了再次检测的部分，为什么还是不安全？
 
-这便使人犯难了。不加 `bcache.lock` 不安全，加了 `bcache.lock` 争用多，如之奈何？
+#### 5.4.2 安全性处理（2）
 
-## 5.4 安全性处理（2）
+来看看第一阶段查找命中只加 `b->spinlock` 的问题吧。
 
-来看看只加 `b->spinlock` 的问题吧。
+思考一种情况：未命中寻找 LRU 块时，找到了一个这样的块，正准备替换，但是这个块被另一个进程在第一次无 `bcache.lock` 查找命中阶段拿走了。
 
-未命中寻找 LRU 块时，找到了一个这样的块，正准备更新，但是这个块被另一个进程在第一次无 `bcache.lock` 检测阶段拿走了。（注意为何能被拿走，可以想一想）
+同时注意到，能被拿走的原因正是因为一个很小的逻辑漏洞——**遍历寻找 `timestamp` 最小的缓存块，但是找到这个时间戳最小的块之后应该需要一直拿着它的锁**。
 
-当第一次检测也加上 `bcache.lock` 的时候，就不会发生这样的事，因为 `bcache.lock` 保护了数组，使其在一个进程访问时不会被另一个进程访问。
+而之前的实现里，为了方便，我一直忽视了这个细节。因为不太好处理。在找的过程中，你肯定会获取并释放一些块的锁。可是怎么才能知道在哪一次就找到了 `timestamp` 最小的缓存块，并且不释放它的锁呢？
 
-同时注意到，能被拿走的原因正是因为一个很小的逻辑漏洞——**遍历寻找 `timestamp` 最小的缓存块，但是当这个块的时间戳最小时应该会一直拿着它的锁**。而我之前的实现里，为了方便，其实一直忽视了这个细节，因为不太好处理。
+避免这样做的方法是有的，下面介绍乐观锁。
 
 了解概念：乐观锁和悲观锁。
 
@@ -564,9 +538,9 @@ test manywrites: panic: ilock: no type
 
 我们可以选择悲观锁，也就是一直锁着这个时间戳最小的块；也可以选择乐观锁，允许你被抢走，我到时候再来检查一次，如果确实被抢走了，我就再查找一次。
 
-这里我们使用乐观锁。怎么才是被抢走了呢？那自然是用 `refcnt == 0` 来判断。如果真的被抢走了，那么 refcnt 的值就不会是 0 了。如何重试呢？我们直接使用 goto 返回到再次检测的位置。
+这里我们使用乐观锁。怎么才是被抢走了呢？那自然是用 `refcnt == 0` 来判断。如果真的被抢走了，那么 refcnt 的值就不会是 0 了。如何重试呢？我们直接使用 goto 返回到第二阶段开头（大致逻辑）。
 
-整体的判断逻辑应该形如：
+整体的判断逻辑应该形如（panic 的位置已经被重新安排）：
 
 ```c
   if (lrub == (void *)0) // no unused buf, should panic
@@ -601,7 +575,15 @@ LOOP:
 
 你可以选择释放，也可以选择不释放。不释放的话，就要把 LOOP 加到 acquire 之前。
 
-有时，这种选择是会关联到 goto 的位置。幸运的是，在本次实现中，不管选择释放与否，我们都要把 LOOP 的位置放在第二次查找命中前。（之后再用到这个方法就要斟酌一下）
+这种选择会关联到 LOOP 的位置。如果我们不释放这个锁，那么我们可以把 LOOP 放在未命中查找替换前。
+
+理由：当前进程没能从数组中查找命中，进入了到未命中查找替换的过程；其他进程就算要访问相同的文件，到数组中查找命中，一样会未命中，同时会被阻挡在 `bcache.lock` 的外面，直到之前那个进程替换结束，释放 `bcache.lock` 之后。所以当前进程不用担心会有其他进程能够使得自己在 goto 之后重新查找到命中——因为这个文件根本就还没被缓存。所以在 goto 回来之后，可以不用再查找命中一遍，直接再去数组中找 LRU 块。
+
+并且，你可以想一想为什么 5.4.1 需要那样的处理，我们设想一个场景：
+
+进程 A 查找命中缓存块 BUF，未命中，于是进入第二阶段查找替换；进程 B 也查找一样的缓存块 BUF, 既然 进程 A 当时没有找到，那么进程 B 就更没可能找到，于是进程 B 在完成第一阶段之后就在第二阶段前等着了。
+
+那么进程 A 终于替换了缓存块之后，如果进程 B 还以为这个缓存块不在数组里，那他就会重新去查找替换——这当然是不对的！所以需要再次查找命中。当然，这样的事情只需要在进入第二阶段开始的时候做一次。
 
 `bget`：
 
@@ -634,8 +616,7 @@ bget(uint dev, uint blockno)
   }
 
   acquire(&bcache.lock);
-// stage2
-LOOP:
+  // stage2
   for (b = bcache.buf; b < bcache.buf + NBUF; b++)
   {
     // unsafe check
@@ -657,10 +638,14 @@ LOOP:
     }
   }
 
+  uint time_least;
+  struct buf *lrub;
+
+LOOP:
   // Not cached.
   // **Recycle** the least recently used (LRU) unused buffer.
-  uint time_least = 0xffffffff;
-  struct buf *lrub = (void *)0;
+  time_least = 0xffffffff;
+  lrub = (void *)0;
   for (b = bcache.buf; b < bcache.buf + NBUF; b++)
   {
     // refcnt == 0 means unused
@@ -768,7 +753,19 @@ start test1
 test1 OK
 ```
 
-## 6 最终代码
+## 6 总结
+
+为了优化性能以及减少锁争用，我们选择不给查找命中加上大锁，而给未命中查找替换加上大锁。
+
+第二阶段必须是再次查找命中 + 未命中查找替换，这是一个原子的过程。
+
+如果我们在第二阶段不一直持有我们找到的 LRU 块的锁，那么就可能会被第一阶段抢走。解决这个问题的办法是：悲观锁，即一直持有这个锁，这样就不会被抢走；乐观锁，即不一直持有这个锁，但是在使用块时会检测是否被其他进程抢走，如果被抢走那么就再去找。
+
+多从实际的场景考虑，发现潜在的问题和优化点。
+
+double check 的使用是可选的优化项，在不能通过测试的时候，就选用其来进行优化。
+
+## 7 最终代码
 
 ```c
 // Buffer cache.
@@ -846,8 +843,7 @@ bget(uint dev, uint blockno)
   }
 
   acquire(&bcache.lock);
-// stage2
-LOOP:
+  // stage2
   for (b = bcache.buf; b < bcache.buf + NBUF; b++)
   {
     // unsafe check
@@ -869,10 +865,14 @@ LOOP:
     }
   }
 
+  uint time_least;
+  struct buf *lrub;
+
+LOOP:
   // Not cached.
   // **Recycle** the least recently used (LRU) unused buffer.
-  uint time_least = 0xffffffff;
-  struct buf *lrub = (void *)0;
+  time_least = 0xffffffff;
+  lrub = (void *)0;
   for (b = bcache.buf; b < bcache.buf + NBUF; b++)
   {
     // refcnt == 0 means unused

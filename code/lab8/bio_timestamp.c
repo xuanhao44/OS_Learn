@@ -73,8 +73,7 @@ bget(uint dev, uint blockno)
   }
 
   acquire(&bcache.lock);
-// stage2
-LOOP:
+  // stage2
   for (b = bcache.buf; b < bcache.buf + NBUF; b++)
   {
     // unsafe check
@@ -96,10 +95,14 @@ LOOP:
     }
   }
 
+  uint time_least;
+  struct buf *lrub;
+
+LOOP:
   // Not cached.
   // **Recycle** the least recently used (LRU) unused buffer.
-  uint time_least = 0xffffffff;
-  struct buf *lrub = (void *)0;
+  time_least = 0xffffffff;
+  lrub = (void *)0;
   for (b = bcache.buf; b < bcache.buf + NBUF; b++)
   {
     // refcnt == 0 means unused
