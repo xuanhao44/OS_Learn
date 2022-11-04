@@ -165,12 +165,6 @@ LOOP:
 
 大致结构我们在之前的文章提到过：[MIT 6.S081 - Lab Lock Buffer cache (2) timestamp 单项优化](https://www.sheniao.top/os/122.html)
 
-> 1. 如果没有找到 lrub（lrub 为空），那么还是需要 panic 的。
-> 2. 如果找到了 lrub（lrub 不为空），但是被第一阶段抢走了（refcnt 不等于 0），那么再找一遍。
-> 3. 如果找到了 lrub（lrub 不为空），但是也没被第一阶段抢走（refcnt 等于 0），那么就确定了，可以开始替换。
-
-我们需要注意的是：goto 的位置。
-
 在本次实现中，如果我们选择 goto 之前不释放 `bcache.lock`。那么我们可以不把 LOOP 放到 stage2 的开头，而是把 LOOP 放到在所有锁中搜索 LRU 的遍历的开头。
 
 下面的代码直接到了 `bget` 函数的末尾。
