@@ -1,8 +1,6 @@
 # MIT 6.S081 - Lab Lock -- overview
 
-实验八前提条件：
-
-**在做实验之前，请同学们阅读[xv6手册](https://pdos.csail.mit.edu/6.828/2020/xv6/book-riscv-rev1.pdf)的以下章节及相关源代码：（家人们一定要看!!!）**
+在做实验之前，阅读 [xv6手册](https://pdos.csail.mit.edu/6.828/2020/xv6/book-riscv-rev1.pdf) 的以下章节及相关源代码：
 
 - [1] xv6 book, Chapter 6 Locking (锁)
 - [2] xv6 book, 3.5 Code: Physical memory allocator（物理内存分配器）
@@ -10,9 +8,7 @@
 
 ## 起始
 
-首先回答报告的问题吧，算是大致浏览实验指导书的结果。
-
-但是千万不要觉得他把什么都告诉你了。然后你就能凭借这些知识去写了。
+首先回答报告的问题吧，算是大致浏览实验指导书的结果。但是千万不要觉得他把什么都告诉你了，然后你就能凭借这些知识去写了。
 
 *很好的指导书，爱来自瓷器（.jpg*
 
@@ -62,6 +58,8 @@ struct {
   - 在初始化的时候被调用，作用是把最开始的物理内存放置到 kmem 中（配合 freerange）。
 - `void *kalloc(void)`
   - 为调用它的进程提供一块 PGSIZE 大小的连续内存，或者说一个空页。
+
+
 
 **c. 为什么指导书提及的优化方法可以提升性能？**
 
@@ -161,6 +159,8 @@ void remove(struct buf *head, struct buf *b_target)
   }
 }
 ```
+
+
 
 **c. 为什么哈希表可以提升磁盘缓存的性能？可以使用内存分配器的优化方法优化磁盘缓存吗？请说明原因。**
 

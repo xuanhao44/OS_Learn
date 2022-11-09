@@ -1,4 +1,6 @@
-# 从逻辑地址到物理地址的翻译
+# MIT 6.S081 - Lab Page tables -- MMU
+
+从逻辑地址到物理地址的翻译。
 
 *本篇仅介绍页表核心逻辑，不介绍其他内存管理知识。*
 
@@ -30,7 +32,7 @@
 
 ## 4 最简单的页表，以及翻译方式
 
-![只有一级页表](https://typora-1304621073.cos.ap-guangzhou.myqcloud.com/typora/%E5%8F%AA%E6%9C%89%E4%B8%80%E7%BA%A7%E9%A1%B5%E8%A1%A8.png)
+<img src="https://typora-1304621073.cos.ap-guangzhou.myqcloud.com/typora/%E5%8F%AA%E6%9C%89%E4%B8%80%E7%BA%A7%E9%A1%B5%E8%A1%A8.png" alt="只有一级页表" style="zoom: 50%;" />
 
 - **页表的构成：（44 bit）PPN + （10 bit）Flags（暂时不解释 Flags）= 54 bit**
 - index 用来查找 page，offset 对应的是一个 page 中的哪个字节。
@@ -43,7 +45,7 @@ index 有 27 位，而一个 index 对应一个 page，那么我们的这个页�
 
 所以页表不是这样存储的，实际上是一个**多级的结构**。
 
-![三级页表](https://typora-1304621073.cos.ap-guangzhou.myqcloud.com/typora/%E4%B8%89%E7%BA%A7%E9%A1%B5%E8%A1%A8.png)
+<img src="https://typora-1304621073.cos.ap-guangzhou.myqcloud.com/typora/%E4%B8%89%E7%BA%A7%E9%A1%B5%E8%A1%A8.png" alt="三级页表" style="zoom: 50%;" />
 
 我们之前提到的虚拟内存地址中的 27bit 的 index，实际上是由 3 个 9 bit 的数字组成：（L2，L1，L0）。9 bit 用来索引一个表单，那么一个表单上就只有 512 个项。一个表单的结构和之前的页表是一样的。
 
