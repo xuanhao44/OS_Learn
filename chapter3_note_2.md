@@ -157,7 +157,7 @@ void kvmmap(uint64 va, uint64 pa, uint64 sz, int perm)
 }
 ```
 
-mappages 和 walk 函数略。
+*mappages 和 walk 函数略。*
 
 最后注意：**TRAMPOLINE 是一个异类。它并不是直接映射。**
 
@@ -270,7 +270,7 @@ userinit(void)
 
 allocproc 是选取了一个 UNUSED proc，然后设置好相关参数后返回这个进程，也就是拿来用。
 
-我们关心的部分是其中的两个部分：
+我们关心的是其中的两个部分：
 
 ```c
   // Allocate a trapframe page.
@@ -288,14 +288,12 @@ allocproc 是选取了一个 UNUSED proc，然后设置好相关参数后返回�
   }
 ```
 
-我们先为 trapframe 分配了一页的内存，但是并为其设置映射关系——毕竟此时页表还不存在。
+我们先为 trapframe 分配了一页的内存，但是并没有为其设置映射关系——毕竟此时页表还不存在。
 
  我们再来看 proc_pagetable 函数。主要顺序完成了这些事情：
 
 1. 创建了空页表。
-2. 只在该页表上添加了 trampoline 和 trapframe 的映射，**其它的虚拟地址空间都暂时为空**。
-
-注意到在设置 trampoline 方面，内核地址空间和用户地址空间有相同的逻辑地址，也有相同的物理地址，这意味着一个物理地址被映射到了多个虚拟地址中；用户地址空间还有 trapframe，被设置在 trampoline 的下面。
+2. 只在该页表上添加了 trampoline 和 trapframe 的映射，**其它的虚拟地址空间都还没被设置**。
 
 ```c
 // Create a user page table for a given process,
@@ -332,7 +330,9 @@ proc_pagetable(struct proc *p)
 }
 ```
 
-![user_address_space_allocproc](https://typora-1304621073.cos.ap-guangzhou.myqcloud.com/typora/user_address_space_allocproc.jpg)
+在设置 trampoline 方面，内核地址空间和用户地址空间有相同的逻辑地址，也有相同的物理地址，这意味着一个物理地址被映射到了多个虚拟地址中。用户地址空间还有 trapframe，被设置在 trampoline 的下面。
+
+<img src="https://typora-1304621073.cos.ap-guangzhou.myqcloud.com/typora/user_address_space_allocproc.jpg" alt="user_address_space_allocproc" style="zoom:50%;" />
 
 ### 2.2 uvminit
 
@@ -345,7 +345,7 @@ uvminit(p->pagetable, initcode, sizeof(initcode));
 到之前为止，这个用户进程被创建了，设置了页表。很明显，用户地址空间中还要放程序本身。uvminit 就是做这样一件事：
 
 - 用 kalloc 申请一页内存；
-- 建立映射——逻辑地址是 0，物理地址是 kalloc 的返回值 mem，即申请到的物理内存地址；
+- 建立映射——逻辑地址是 0，物理地址是 kalloc 申请来的物理内存地址 mem；
 - 把 initcode 放到用 kalloc 中申请这一页中。
 
 ```c
@@ -365,15 +365,17 @@ void uvminit(pagetable_t pagetable, uchar *src, uint sz)
 }
 ```
 
-![user_address_space_uvminit](https://typora-1304621073.cos.ap-guangzhou.myqcloud.com/typora/user_address_space_uvminit.jpg)
+<img src="https://typora-1304621073.cos.ap-guangzhou.myqcloud.com/typora/user_address_space_uvminit.jpg" alt="user_address_space_uvminit" style="zoom:50%;" />
 
-所以到现在，initcode 就给人一种“麻雀虽小，五脏俱全”的感觉。只不过，这个用户进程地址空间还没有之前看到的 data，guard page，stack 等。
+initcode 进程就给人一种“麻雀虽小，五脏俱全”的感觉，只不过这个用户进程地址空间还没有之前看到的 data，guard page，stack 等部分。
 
-userinit 就讲到这里，接下来就是被调度器调度运行。运行，也就是 exec("/init")。我们接下来就来讲 exec 系统调用。
+那么 userinit 就讲到这里，接下来就是 initcode 进程被调度器调度运行。运行——也就是 `exec("/init")`。
 
-系统调用的流程属于 chapter 2 内容，就省略了。
+我们接下来就来讲 exec 系统调用。
 
-## 3 sbrk
+*系统调用的流程属于 chapter 2 内容，就省略了。*
+
+## 3 sbrk *
 
 *3.6 Process Address Space & 3.7 Code: Sbrk*
 
@@ -381,7 +383,7 @@ userinit 就讲到这里，接下来就是被调度器调度运行。运行，�
 
 应用程序使用 sbrk 系统调用向内核请求**堆内存**。堆在栈的上方，并且堆的用户地址空间是随着 p->sz 一直向上的。
 
-![user_address_space_sbrk](https://typora-1304621073.cos.ap-guangzhou.myqcloud.com/typora/user_address_space_sbrk.jpg)
+<img src="https://typora-1304621073.cos.ap-guangzhou.myqcloud.com/typora/user_address_space_sbrk.jpg" alt="user_address_space_sbrk" style="zoom:50%;" />
 
 **Sbrk** 是一个系统调用，用户进程调用它以增加或减少自己拥有的物理内存（proc->sz）。**growproc** 根据增加或减少内存的需要，又分别调用 uvmmalloc 和 uvmdealloc 来满足请求。
 
@@ -437,7 +439,7 @@ if ((pagetable = proc_pagetable(p)) == 0)
   }
 ```
 
-![user_address_space_loadelf](https://typora-1304621073.cos.ap-guangzhou.myqcloud.com/typora/user_address_space_loadelf.jpg)
+<img src="https://typora-1304621073.cos.ap-guangzhou.myqcloud.com/typora/user_address_space_loadelf.jpg" alt="user_address_space_loadelf" style="zoom:50%;" />
 
 至此，exec 已经将用户程序的各程序段都装载完成了。
 
@@ -470,7 +472,7 @@ sp 的位置是 sz，也就是现在用户自下而上的 memory 最高的位置
 
 故栈的大小是一页 4096 bytes，且栈的地址使用是从上到下，即栈顶为 sp，然后不超过 stackbase。
 
-![user_address_space_stack](https://typora-1304621073.cos.ap-guangzhou.myqcloud.com/typora/user_address_space_stack.jpg)
+<img src="https://typora-1304621073.cos.ap-guangzhou.myqcloud.com/typora/user_address_space_stack.jpg" alt="user_address_space_stack" style="zoom:50%;" />
 
 从栈顶开始，把一些东西推入用户栈内：
 
