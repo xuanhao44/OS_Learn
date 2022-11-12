@@ -1,4 +1,6 @@
-# MIT 6.S081 - Lab Page tables -- MMU
+# MIT 6.S081 - chapter 3 note 1
+
+大致对应 3.1 Paging Hardware
 
 从逻辑地址到物理地址的翻译。
 
