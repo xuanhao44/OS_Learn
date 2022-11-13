@@ -1,4 +1,4 @@
-# MIT 6.S081 - Lab Page tables -- vmprint
+# MIT 6.S081 - Lab Page tables - vmprint
 
 任务 1 就是让你熟悉 xv6 的源码的过程，所以不会太难；但你要用学到的理论知识去理解和熟悉代码。
 

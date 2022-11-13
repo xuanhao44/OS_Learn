@@ -1,4 +1,4 @@
-# MIT 6.S081 - Lab Lock Buffer cache (4) 使用两项优化
+# MIT 6.S081 - Lab Lock - Buffer cache (4) 使用两项优化
 
 [OS_Learn/bio_mix.c at main · xuanhao44/OS_Learn (github.com)](https://github.com/xuanhao44/OS_Learn/blob/main/code/lab8/bio_mix.c)
 

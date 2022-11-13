@@ -1,4 +1,4 @@
-# MIT 6.S081 - Lab Lock Buffer cache (3) 哈希单项优化
+# MIT 6.S081 - Lab Lock - Buffer cache (3) 哈希单项优化
 
 代码传送门：[OS_Learn/bio_hash.c at main · xuanhao44/OS_Learn (github.com)](https://github.com/xuanhao44/OS_Learn/blob/main/code/lab8/bio_hash.c)
 

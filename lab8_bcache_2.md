@@ -1,4 +1,4 @@
-# MIT 6.S081 - Lab Lock Buffer cache (2) timestamp 单项优化
+# MIT 6.S081 - Lab Lock - Buffer cache (2) timestamp 单项优化
 
 关键字：double check、乐观锁
 

@@ -1,4 +1,4 @@
-# MIT 6.S081 - Lab Utilities -- overview
+# MIT 6.S081 - Lab Utilities - overview
 
 记一下起始和结束。
 
@@ -236,7 +236,7 @@ int main()
 
 按照 Submit the lab 把代码上传到了平台上。
 
-![lab-util-handin](https://typora-1304621073.cos.ap-guangzhou.myqcloud.com/typora/lab-util-handin.jpg)
+<img src="https://typora-1304621073.cos.ap-guangzhou.myqcloud.com/typora/lab-util-handin.jpg" alt="lab-util-handin" style="zoom: 50%;" />
 
 ## END：sh.c 可以继续拓展
 

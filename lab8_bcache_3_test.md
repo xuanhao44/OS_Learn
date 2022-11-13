@@ -1,4 +1,4 @@
-# MIT 6.S081 - Lab Lock Buffer cache (3) 哈希单项优化 - 死锁处理以及 test and set 的 xv6 实现
+# MIT 6.S081 - Lab Lock - Buffer cache (3) 哈希单项优化 - 死锁处理以及 test and set 的 xv6 实现
 
 代码传送门：[OS_Learn/bio_hash_try_acquire.c at main · xuanhao44/OS_Learn (github.com)](https://github.com/xuanhao44/OS_Learn/blob/main/code/lab8/bio_hash_try_acquire.c)
 

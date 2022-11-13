@@ -1,10 +1,10 @@
-# MIT 6.S081 - Lab Page tables -- A kernel page table per process
+# MIT 6.S081 - Lab Page tables - A kernel page table per process
 
 ## 0 起始
 
 任务二：
 
-分理出独立页表。虚实地址相同的映射应该要保留， **先不需要**加上用户页表的内容。也就是说，当前任务下我们为每个进程创建的内核页表对应的地址空间大概包括：一些直接映射、`TRAMPOLINE`，以及内核栈。
+分理出独立页表。虚实地址相同的映射应该要保留，**先不需要**加上用户页表的内容。也就是说，当前任务下我们为每个进程创建的内核页表对应的地址空间大概包括：一些直接映射、`TRAMPOLINE`，以及内核栈。
 
 参考
 
@@ -83,7 +83,7 @@ void ukvmmap(pagetable_t pagetable, uint64 va, uint64 pa, uint64 sz, int perm)
 
 ### 1.3 修改 `procinit()`、`allocproc()` 函数
 
-原本的`procinit()` 仅在 `kernel/main.c` 中被调用一次，用于给进程分配内核栈的物理页并在 `kernel_pagetable` 上建立映射。
+原本的 `procinit()` 仅在 `kernel/main.c` 中被调用一次，用于给进程分配内核栈的物理页并在 `kernel_pagetable` 上建立映射。
 
 申请来的物理页分配给内核栈，把物理地址放到 `kstack_pa` 中。
 

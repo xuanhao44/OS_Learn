@@ -1,4 +1,4 @@
-# MIT 6.S081 - Lab System calls -- overview
+# MIT 6.S081 - Lab System calls - overview
 
 实验二前提条件：
 

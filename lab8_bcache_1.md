@@ -1,4 +1,4 @@
-# MIT 6.S081 - Lab Lock Buffer cache (1) 分析原始设计
+# MIT 6.S081 - Lab Lock - Buffer cache (1) 分析原始设计
 
 ## Cache 结构
 

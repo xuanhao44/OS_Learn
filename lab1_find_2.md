@@ -140,7 +140,7 @@ int main(int argc, char *argv[])
 
 *照抄 ls.c 里的是不行的！因为 static char 指向的是同一个东西 buf，用于比较是不可以的！*
 
-![find递归逻辑](https://typora-1304621073.cos.ap-guangzhou.myqcloud.com/typora/find%E9%80%92%E5%BD%92%E9%80%BB%E8%BE%91.jpg)
+<img src="https://typora-1304621073.cos.ap-guangzhou.myqcloud.com/typora/find%E9%80%92%E5%BD%92%E9%80%BB%E8%BE%91.jpg" alt="find递归逻辑" style="zoom:33%;" />
 
 **注意到要去掉 `.` 和 `..`，避免循环递归！**
 

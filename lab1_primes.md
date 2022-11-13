@@ -288,7 +288,7 @@ loop:
 
 很明显会有一个递归。
 
-![primes图示递归逻辑](https://typora-1304621073.cos.ap-guangzhou.myqcloud.com/typora/primes%E5%9B%BE%E7%A4%BA%E9%80%92%E5%BD%92%E9%80%BB%E8%BE%91.png)
+<img src="https://typora-1304621073.cos.ap-guangzhou.myqcloud.com/typora/primes%E5%9B%BE%E7%A4%BA%E9%80%92%E5%BD%92%E9%80%BB%E8%BE%91.png" alt="primes图示递归逻辑" style="zoom:50%;" />
 
 最终代码如下：
 

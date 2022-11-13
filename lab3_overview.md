@@ -11,11 +11,11 @@
 
 王道考研关于内存管理这一块的总体的知识比 MIT 课程全面一些，但是在细节上不如 MIT 课程；
 
-<img src="https://typora-1304621073.cos.ap-guangzhou.myqcloud.com/typora/%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86%E7%9F%A5%E8%AF%86%E6%A1%86%E6%9E%B6.png" alt="内存管理知识框架" style="zoom: 50%;" />
+<img src="https://typora-1304621073.cos.ap-guangzhou.myqcloud.com/typora/%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86%E7%9F%A5%E8%AF%86%E6%A1%86%E6%9E%B6.png" alt="内存管理知识框架" style="zoom: 33%;" />
 
 在硬件方面 MIT 或者说 xv6book 的讲解不多，可以到 [riscv-privileged](https://riscv.org/technical/specifications/) 中去找相应的部分去看。
 
-<img src="https://typora-1304621073.cos.ap-guangzhou.myqcloud.com/typora/riscv-privileged.png" alt="riscv-privileged" style="zoom: 50%;" />
+<img src="https://typora-1304621073.cos.ap-guangzhou.myqcloud.com/typora/riscv-privileged.png" alt="riscv-privileged" style="zoom: 33%;" />
 
 ## 结束：报告
 
@@ -68,7 +68,7 @@
 
 SV48：48 bit 的逻辑地址，除去 12 bit 的 offset，那么 index 就有 36 bit，考虑到采用了四级页表，那么每一级页表就对应 9 bit 的 index，也就是有 512 项。
 
-![SV48-四级页表](https://typora-1304621073.cos.ap-guangzhou.myqcloud.com/typora/SV48-%E5%9B%9B%E7%BA%A7%E9%A1%B5%E8%A1%A8.jpg)
+<img src="https://typora-1304621073.cos.ap-guangzhou.myqcloud.com/typora/SV48-%E5%9B%9B%E7%BA%A7%E9%A1%B5%E8%A1%A8.jpg" alt="SV48-四级页表" style="zoom: 33%;" />
 
 ### 二 实验详细设计
 

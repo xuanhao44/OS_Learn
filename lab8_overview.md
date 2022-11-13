@@ -1,4 +1,4 @@
-# MIT 6.S081 - Lab Lock -- overview
+# MIT 6.S081 - Lab Lock - overview
 
 在做实验之前，阅读 [xv6手册](https://pdos.csail.mit.edu/6.828/2020/xv6/book-riscv-rev1.pdf) 的以下章节及相关源代码：
 
