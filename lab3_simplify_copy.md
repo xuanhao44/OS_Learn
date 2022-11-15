@@ -185,7 +185,7 @@ ukvmcopy(np->pagetable, np->k_pagetable, 0, np->sz);
 
 #### 1.3.2 `exec()`
 
-`exec` 前面的大半部分都在设置 pagetable，在最后 commit 的时候再交给 `p->pagetable`。
+`exec()` 前面的大半部分都在设置 pagetable，在最后 commit 的时候再交给 `p->pagetable`。
 
 ```c
   // Commit to the user image.
@@ -214,7 +214,7 @@ ukvmcopy(np->pagetable, np->k_pagetable, 0, np->sz);
   proc_freepagetable(oldpagetable, oldsz);
 ```
 
-需要注意的是，不需要模仿 exec 那样先设置新的 pagetable，最后转交结束后再释放 oldpagetable。我们直接先清除旧的进程内核页表，复制出新的进程内核页表。
+需要注意的是，不需要模仿 `exec()` 那样先设置新的 pagetable，最后转交结束后再释放 oldpagetable。我们直接先清除旧的进程内核页表，复制出新的进程内核页表。
 
 ### 1.3.3 `growproc()`
 
@@ -225,19 +225,24 @@ ukvmcopy(np->pagetable, np->k_pagetable, 0, np->sz);
 ```c
 // Grow or shrink user memory by n bytes.
 // Return 0 on success, -1 on failure.
-int
-growproc(int n)
+int growproc(int n)
 {
   uint sz;
   struct proc *p = myproc();
 
   sz = p->sz;
-  if(n > 0){
-    if((sz = uvmalloc(p->pagetable, sz, sz + n)) == 0) {
+  if (n > 0)
+  {
+    if ((sz = uvmalloc(p->pagetable, sz, sz + n)) == 0)
       return -1;
-    }
-  } else if(n < 0){
+
+    if (ukvmcopy(p->pagetable, p->k_pagetable, p->sz, sz) != 0)
+      return -1;
+  }
+  else if (n < 0)
+  {
     sz = uvmdealloc(p->pagetable, sz, sz + n);
+    ukvmdealloc(p->k_pagetable, p->sz, p->sz + n);
   }
   p->sz = sz;
   return 0;
@@ -252,9 +257,9 @@ growproc(int n)
 
 我们没有必要使用 `mappages()`——它只不过是 `walk()` 的套壳罢了，我们没有必要使用它，我们可以直接使用 `walk()`。
 
-我们使用 walk 在旧页表中，用虚拟地址 i 抓出对应的叶子页表上的 PTE。那么从旧页表里抓出来的 PTE 我们检查一下 Valid 位再使用。这和之前一致。
+我们使用 `walk()` 在旧页表中，用虚拟地址 `i` 抓出对应的叶子页表上的 PTE。那么从旧页表里抓出来的 PTE 我们检查一下 Valid 位再使用。这和之前一致。
 
-之后我们拿着这个虚拟地址 i 在新页表中建立映射，也就是给它找一个 PTE，这个过程中页表也被建立。但是需要注意的是，用 `walk()` 新设置的 PTE 的 Flags 是没有设置好的，我们去看 `mappages ` 也知道需要给它添上 Valid 位。所以如果再像之前那样 `walk()` 完就检查 Valid 位就必定 panic。因此我们只需要修改这个 PTE，将 User 位置零就好了。
+之后我们拿着这个虚拟地址 `i` 在新页表中建立映射，也就是给它找一个 PTE，这个过程中页表也被建立。但是需要注意的是，用 `walk()` 新设置的 PTE 的 Flags 是没有设置好的，我们去看 `mappages ` 也知道需要给它添上 Valid 位。所以如果再像之前那样 `walk()` 完就检查 Valid 位就必定 panic。因此我们只需要修改这个 PTE，将 User 位置零就好了。
 
 ```c
 int ukvmcopy(pagetable_t old, pagetable_t new, uint64 oldsz, uint64 newsz)
@@ -292,7 +297,7 @@ int ukvmcopy(pagetable_t old, pagetable_t new, uint64 oldsz, uint64 newsz)
 
 事实上，我认为 PLIC 的限制的处理应该放在 `uvmalloc()` 中，毕竟那里才是进程申请内存的地方。这个限制还可以被加到很多地方，就不多说了。
 
-也许可以考虑在加载 ELF 的时候就会超出 PLIC（exec 中的部分）？这也许都是可能的吧，我也不是很清楚。
+也许可以考虑在加载 ELF 的时候就会超出 PLIC（`exec()` 中的部分）？这也许都是可能的吧，我也不是很清楚。
 
 ### 2.3 `copyout()` 改造？
 
