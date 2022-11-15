@@ -6,13 +6,6 @@
 
 分理出独立页表。虚实地址相同的映射应该要保留，**先不需要**加上用户页表的内容。也就是说，当前任务下我们为每个进程创建的内核页表对应的地址空间大概包括：一些直接映射、`TRAMPOLINE`，以及内核栈。
 
-参考
-
-- 思路和本文类似，说理清楚：
-  - [MIT-6.S081-2020实验（xv6-riscv64）三：pgtbl - YuanZiming - 博客园 (cnblogs.com)](https://www.cnblogs.com/YuanZiming/p/14219005.html)
-- 负面例子，建议看完本文再去看：
-  - [MIT 6.S081 Lecture Notes | Xiao Fan (樊潇) (fanxiao.tech)](https://fanxiao.tech/posts/MIT-6S081-notes/#38-lab-3-pgtbl)
-
 ## 1 流程
 
 ### 1.1 修改 `kernel/proc.h` 定义
@@ -440,4 +433,6 @@ void ukfreewalk(pagetable_t pagetable)
 
 2.1、2.2、2.3 分别说的是三个不同的事，请注意区分；2.3 和 2.4 有逻辑上的先后关系。前三个点是我写完之后总结出来的，在我写的过程中我基本上没有把这三个问题区分开——也就是说混成一团。这真是很糟糕的体验。
 
-最开始提到的负面例子，他采用了 “`allocproc()` 分配并映射内核栈 + 取消内核栈在 `kernel_pagetable` 上的映射” 的方案，成功让我在参考他的代码的时候迷糊了很久。另外很离谱的是，他并没有提到他修改了 `kvmpa()` 函数，导致我尝试他的方案的时候一直失败。
+一个负面例子：[MIT 6.S081 Lecture Notes | Xiao Fan (樊潇) (fanxiao.tech)](https://fanxiao.tech/posts/MIT-6S081-notes/#38-lab-3-pgtbl)
+
+他采用了 “`allocproc()` 分配并映射内核栈 + 取消内核栈在 `kernel_pagetable` 上的映射” 的方案，成功让我在参考他的代码的时候迷糊了很久。另外很离谱的是，他并没有提到他修改了 `kvmpa()` 函数，导致我尝试他的方案的时候一直失败，也就是说这个 blog 写的不太行。**并且他的任务三写的也有很大的问题。**
