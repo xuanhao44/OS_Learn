@@ -14,6 +14,10 @@
 
 用的是 2020 年的课，2020 年的实验。
 
+**我的 xv6-labs-2020 仓库地址**：[xuanhao44/xv6-labs-2020 (github.com)](https://github.com/xuanhao44/xv6-labs-2020/tree/util)
+
+有些实验只看 blog 不能覆盖所有细节，这时候就需要把源码弄下来看看了。（比如 pgtbl 实验）
+
 课程：[6.S081 / Fall 2020 课程中文教案 (gitbook.io)](https://mit-public-courses-cn-translatio.gitbook.io/mit6-s081/)
 
 不看视频的话就直接看中文字幕合集，是一样的。

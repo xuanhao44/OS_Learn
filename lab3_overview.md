@@ -1,4 +1,4 @@
-# MIT 6.S081 - Lab Page tables -- overview
+# MIT 6.S081 - Lab Page tables - overview
 
 在做实验之前，阅读 [xv6手册](https://pdos.csail.mit.edu/6.828/2020/xv6/book-riscv-rev1.pdf) 的以下章节及相关源代码：
 
@@ -72,5 +72,15 @@ SV48：48 bit 的逻辑地址，除去 12 bit 的 offset，那么 index 就有 3
 
 ### 二 实验详细设计
 
+（包括学习过程）
+
+- [MIT 6.S081 - chapter 3 note 1](https://www.sheniao.top/os/139.html)
+- [MIT 6.S081 - Lab Page tables - vmprint](https://www.sheniao.top/os/138.html)
+- [MIT 6.S081 - chapter 3 note 2](https://www.sheniao.top/os/140.html)
+- [MIT 6.S081 - Lab Page tables - A kernel page table per process](https://www.sheniao.top/os/142.html)
+- [MIT 6.S081 - Lab Page tables - Simplify copyin/copyinstr](https://www.sheniao.top/os/163.html)
+
 ### 三 实验结果截图
+
+<img src="https://typora-1304621073.cos.ap-guangzhou.myqcloud.com/typora/lab3_grade.png" alt="lab3_grade" style="zoom:67%;" />
 
