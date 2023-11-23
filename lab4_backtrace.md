@@ -14,6 +14,7 @@ backtrace:
 ```
 
 之后退出 qemu。在您的终端中：地址可能略有不同，但如果您运行 `addr2line -e kernel/kernel`（或 `riscv64-unknown-elf-addr2line -e kernel/kernel`）并按如下方式剪切和粘贴上述地址：
+
 ```shell
 $ addr2line -e kernel/kernel
 0x0000000080002de2
@@ -87,5 +88,4 @@ void backtrace(void)
 
 *注意添加的语句是上面 backtrace 的结果，不是从指导书上复制过来的。*
 
-![backtrace 验证](https://typora-1304621073.cos.ap-guangzhou.myqcloud.com/typora/lab4_backtrace.png)
-
+<img src="https://typora-1304621073.cos.ap-guangzhou.myqcloud.com/typora/lab4_backtrace.png" alt="backtrace 验证" style="zoom: 67%;" />
